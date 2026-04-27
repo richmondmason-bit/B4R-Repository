@@ -1,0 +1,599 @@
+---- SprintSystem ABSOLUTE FINAL v3.9.2 
+--local Players = game:GetService("Players")
+--local UserInputService = game:GetService("UserInputService")
+--local RunService = game:GetService("RunService")
+--local TweenService = game:GetService("TweenService")
+--
+--local player = Players.LocalPlayer
+--local camera = workspace.CurrentCamera
+--
+
+--local character, humanoid, rootPart, animator
+--local sprintTrack, walkTrack, idleTrack, injuredWalkTrack, injuredSprintTrack
+--local jumpTrack, fallTrack, slideTrack, vaultTrack
+--local leftWallRunTrack, rightWallRunTrack, wallJumpTrack
+--
+--local isSprinting = false
+--local isSliding = false
+--local isAirborne = false
+--local isVaulting = false
+--local isWallRunning = false
+--local isExhausted = false
+--local isSlideOnCooldown = false
+--
+--local lastMoveState = "Idle"
+--
+---- STAMINA
+--local STAMINA_MAX = 100
+--local stamina = STAMINA_MAX
+--local displayedStamina = STAMINA_MAX
+--local DRAIN_RATE = 9
+--local JUMP_DRAIN = 8
+--local REGEN_RATE = 33
+--local STAMINA_REGEN_DELAY = 0.8
+--local EXHAUSTION_DURATION = 0.6
+--local EXHAUSTED_SPEED = 15
+--
+--local lastSprintTime = 0
+--local exhaustionEndTime = 0
+--
+---- Slide (Shorter Burst + Cooldown)
+--local MAX_SLIDE_DISTANCE = 25
+--local SLIDE_ACTIVATION_COST = 19
+--local SLIDE_JOLT_BOOST = 38
+--local SLIDE_COAST_SPEED = 44
+--local SLIDE_MIN_FORWARD_DOT = 0.3
+--local SLIDE_COOLDOWN = 3
+--
+--local slideCooldownEndTime = 0
+--local slideStartPos = Vector3.new()
+--
+---- Speeds / Visuals
+--local WALK_SPEED = 18
+--local SPRINT_SPEED = 34
+--local WALK_FOV = 65
+--local SPRINT_FOV = 85
+--local SLIDE_FOV = 89
+--local SLIDE_HIPHEIGHT_MULTIPLIER = 0.4
+--local DEFAULT_HIP_HEIGHT = 0
+--
+--local ANIM_FADE = 0.13
+--local bobTime = 0
+--local BOB_SPEED = 10
+--local BOB_AMOUNT = 0.07
+--
+--local SLIDE_KEY = Enum.KeyCode.C
+--
+---- Input buffering
+--local lastSlidePressTime = 0
+--local SLIDE_PRESS_WINDOW = 0.12
+--
+---- Vaulting
+--local VAULT_FORWARD_BOOST = 45
+--local VAULT_UP_BOOST = 27
+--local VAULT_STAMINA_COST = 8
+--local VAULT_DETECTION_DISTANCE = 6
+--local VAULT_DETECTION_HEIGHT = 2.8
+--local JUMP_COOLDOWN_TIME = 0.34
+--local jumpCooldown = 0
+--
+---- Wall running & wall jumps
+--local WALLRUN_MAX_TIME = 2
+--local WALLRUN_DRAIN_MULTIPLIER = 1.5
+--local WALLRUN_SPEED = 32
+--local WALLRUN_INITIAL_COST = 8
+--local WALLJUMP_BOOST = 100      -- Stronger away boost
+--local WALLJUMP_FORWARD_BOOST = 72
+--local WALLJUMP_UP_BOOST = 32
+--local WALLJUMP_STAMINA_COST = 10
+--local WALL_DETECTION_DISTANCE = 3.5
+--
+--local wallNormal = Vector3.new()
+--local wallRunEndTime = 0
+--local DEFAULT_JUMP_POWER = 50
+
+--local SPRINT_ANIM_ID = "rbxassetid://102981744469535"
+--local WALK_ANIM_ID = "rbxassetid://115621394601470"
+--local IDLE_ANIM_ID = "rbxassetid://73546288362576"
+--local JUMP_ANIM_ID = "rbxassetid://133807241213526"
+--local FALL_ANIM_ID = "rbxassetid://96420440880814"
+--local INJURED_WALK_ANIM_ID = "rbxassetid://75721158532569"
+--local INJURED_SPRINT_ANIM_ID = "rbxassetid://77599359577586"
+--local SLIDE_ANIM_ID = "rbxassetid://84580604097398"
+--local VAULT_ANIM_ID = "rbxassetid://119576414987575"
+--local LEFT_WALLRUN_ANIM_ID = "rbxassetid://88414621371705"
+--local RIGHT_WALLRUN_ANIM_ID = "rbxassetid://131608867325804"
+--local WALLJUMP_ANIM_ID = "rbxassetid://76099378386490"
+--local function tweenSpeed(speed, time)
+--	time = time or 0.25
+--	if humanoid then
+--		TweenService:Create(humanoid, TweenInfo.new(time, Enum.EasingStyle.Quad), {WalkSpeed = speed}):Play()
+--	end
+--end
+--
+--local function tweenFOV(fov)
+--	if camera then
+--		TweenService:Create(camera, TweenInfo.new(0.35, Enum.EasingStyle.Quad), {FieldOfView = fov}):Play()
+--	end
+--end
+--
+
+--local staminaGui = Instance.new("ScreenGui")
+--staminaGui.Name = "StaminaSystemGui"
+--staminaGui.ResetOnSpawn = false
+--staminaGui.Parent = player:WaitForChild("PlayerGui")
+--
+--local guiFrame = Instance.new("Frame")
+--guiFrame.Size = UDim2.new(0.32, 0, 0.055, 0)
+--guiFrame.Position = UDim2.new(0.5, 0, 0.94, 0)
+--guiFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+--guiFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+--guiFrame.BackgroundTransparency = 0.25
+--guiFrame.BorderSizePixel = 0
+--guiFrame.Parent = staminaGui
+--
+--local uiCorner = Instance.new("UICorner")
+--uiCorner.CornerRadius = UDim.new(0, 8)
+--uiCorner.Parent = guiFrame
+--
+--local staminaBar = Instance.new("Frame")
+--staminaBar.Name = "StaminaBar"
+--staminaBar.Size = UDim2.new(1, 0, 1, 0)
+--staminaBar.BackgroundColor3 = Color3.fromRGB(80, 255, 120)
+--staminaBar.BorderSizePixel = 0
+--staminaBar.Parent = guiFrame
+--
+--local barCorner = Instance.new("UICorner")
+--barCorner.CornerRadius = UDim.new(0, 8)
+--barCorner.Parent = staminaBar
+--
+--local staminaText = Instance.new("TextLabel")
+--staminaText.Name = "StaminaText"
+--staminaText.Size = UDim2.new(1, 0, 1, 0)
+--staminaText.BackgroundTransparency = 1
+--staminaText.Text = "100/100"
+--staminaText.TextColor3 = Color3.fromRGB(255, 255, 255)
+--staminaText.TextScaled = true
+--staminaText.Font = Enum.Font.GothamBold
+--staminaText.Parent = guiFrame
+--
+---- New: Smaller cooldown text ABOVE the stamina bar
+--local cooldownLabel = Instance.new("TextLabel")
+--cooldownLabel.Name = "SlideCooldownLabel"
+--cooldownLabel.Size = UDim2.new(0.6, 0, 0.035, 0)
+--cooldownLabel.Position = UDim2.new(0.5, 0, 0.88, 0)   -- Above the bar
+--cooldownLabel.AnchorPoint = Vector2.new(0.5, 1)
+--cooldownLabel.BackgroundTransparency = 1
+--cooldownLabel.Text = ""
+--cooldownLabel.TextColor3 = Color3.fromRGB(255, 180, 80)
+--cooldownLabel.TextScaled = true
+--cooldownLabel.Font = Enum.Font.GothamSemibold
+--cooldownLabel.TextStrokeTransparency = 0.7
+--cooldownLabel.Parent = staminaGui
+--
+
+--local function stopAll()
+--	if not sprintTrack then return end
+--	walkTrack:Stop(ANIM_FADE)
+--	sprintTrack:Stop(ANIM_FADE)
+--	idleTrack:Stop(ANIM_FADE)
+--	injuredWalkTrack:Stop(ANIM_FADE)
+--	injuredSprintTrack:Stop(ANIM_FADE)
+--	slideTrack:Stop(ANIM_FADE)
+--	if vaultTrack then vaultTrack:Stop(ANIM_FADE) end
+--	if leftWallRunTrack then leftWallRunTrack:Stop(ANIM_FADE) end
+--	if rightWallRunTrack then rightWallRunTrack:Stop(ANIM_FADE) end
+--	if wallJumpTrack then wallJumpTrack:Stop(ANIM_FADE) end
+--	if jumpTrack then jumpTrack:Stop(ANIM_FADE) end
+--	if fallTrack then fallTrack:Stop(ANIM_FADE) end
+--end
+--
+--local function setMoveState(state)
+--	if lastMoveState == state then return end
+--	lastMoveState = state
+--	stopAll()
+--
+--	if state == "Idle" and idleTrack then idleTrack:Play(ANIM_FADE)
+--	elseif state == "Walk" and walkTrack then walkTrack:Play(ANIM_FADE)
+--	elseif state == "Sprint" and sprintTrack then sprintTrack:Play(ANIM_FADE)
+--	elseif state == "Slide" and slideTrack then slideTrack:Play(ANIM_FADE)
+--	elseif state == "InjuredWalk" and injuredWalkTrack then injuredWalkTrack:Play(ANIM_FADE)
+--	elseif state == "InjuredSprint" and injuredSprintTrack then injuredSprintTrack:Play(ANIM_FADE)
+--	elseif state == "LeftWallRun" and leftWallRunTrack then leftWallRunTrack:Play(ANIM_FADE)
+--	elseif state == "RightWallRun" and rightWallRunTrack then rightWallRunTrack:Play(ANIM_FADE)
+--	end
+--end
+--
+
+--local function canVault()
+--	if not rootPart then return false end
+--	local forward = rootPart.CFrame.LookVector * VAULT_DETECTION_DISTANCE
+--	local rayParams = RaycastParams.new()
+--	rayParams.FilterDescendantsInstances = {character}
+--	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+--	rayParams.IgnoreWater = true
+--
+--	local originHip = rootPart.Position + Vector3.new(0, VAULT_DETECTION_HEIGHT, 0)
+--	local resultHip = workspace:Raycast(originHip, forward, rayParams)
+--	if resultHip and (resultHip.Position.Y - rootPart.Position.Y) > 0.5 and (resultHip.Position.Y - rootPart.Position.Y) < 4.5 then return true end
+--
+--	local originKnee = rootPart.Position + Vector3.new(0, 1.2, 0)
+--	local resultKnee = workspace:Raycast(originKnee, forward, rayParams)
+--	if resultKnee and (resultKnee.Position.Y - rootPart.Position.Y) > 0.5 and (resultKnee.Position.Y - rootPart.Position.Y) < 4.5 then return true end
+--	return false
+--end
+--
+--local function getWallNormal()
+--	if not rootPart then return nil end
+--	local right = rootPart.CFrame.RightVector
+--	local rayParams = RaycastParams.new()
+--	rayParams.FilterDescendantsInstances = {character}
+--	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+--	rayParams.IgnoreWater = true
+--
+--	local resultRight = workspace:Raycast(rootPart.Position, right * WALL_DETECTION_DISTANCE, rayParams)
+--	if resultRight and resultRight.Instance and math.abs(resultRight.Normal.Y) < 0.8 then
+--		return {normal = resultRight.Normal, side = "Right"}
+--	end
+--
+--	local resultLeft = workspace:Raycast(rootPart.Position, -right * WALL_DETECTION_DISTANCE, rayParams)
+--	if resultLeft and resultLeft.Instance and math.abs(resultLeft.Normal.Y) < 0.8 then
+--		return {normal = resultLeft.Normal, side = "Left"}
+--	end
+--	return nil
+--end
+--
+
+--local function performWallJump()
+--	if not isWallRunning or not wallNormal then return end
+--	isWallRunning = false
+--	wallNormal = Vector3.new()
+--	stopAll()
+--	if wallJumpTrack then wallJumpTrack:Play(0.15) end
+--
+--	if rootPart then
+--		local awayBoost = wallNormal * WALLJUMP_BOOST          -- Strong push away
+--		local forwardBoost = rootPart.CFrame.LookVector * WALLJUMP_FORWARD_BOOST
+--		rootPart.AssemblyLinearVelocity += awayBoost + forwardBoost + Vector3.new(0, WALLJUMP_UP_BOOST, 0)
+--	end
+--
+--	stamina = math.max(0, stamina - WALLJUMP_STAMINA_COST)
+--	lastSprintTime = tick()
+--	if humanoid then humanoid.JumpPower = DEFAULT_JUMP_POWER end
+--end
+--
+
+--local function loadCharacter(char)
+--	character = char
+--	humanoid = character:WaitForChild("Humanoid")
+--	rootPart = character:WaitForChild("HumanoidRootPart")
+--	animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+--
+--	DEFAULT_HIP_HEIGHT = humanoid.HipHeight
+--	DEFAULT_JUMP_POWER = humanoid.JumpPower
+--
+--	local animateScript = character:FindFirstChild("Animate")
+--	if animateScript then animateScript.Disabled = true end
+--
+--	local function loadAnim(id, priority, looped)
+--		local anim = Instance.new("Animation")
+--		anim.AnimationId = id
+--		local track = animator:LoadAnimation(anim)
+--		track.Priority = priority
+--		track.Looped = looped or false
+--		return track
+--	end
+--
+--	walkTrack = loadAnim(WALK_ANIM_ID, Enum.AnimationPriority.Movement, true)
+--	sprintTrack = loadAnim(SPRINT_ANIM_ID, Enum.AnimationPriority.Action4, true)
+--	idleTrack = loadAnim(IDLE_ANIM_ID, Enum.AnimationPriority.Movement, true)
+--	injuredWalkTrack = loadAnim(INJURED_WALK_ANIM_ID, Enum.AnimationPriority.Movement, true)
+--	injuredSprintTrack = loadAnim(INJURED_SPRINT_ANIM_ID, Enum.AnimationPriority.Action4, true)
+--	slideTrack = loadAnim(SLIDE_ANIM_ID, Enum.AnimationPriority.Action4, true)
+--	jumpTrack = loadAnim(JUMP_ANIM_ID, Enum.AnimationPriority.Action, false)
+--	fallTrack = loadAnim(FALL_ANIM_ID, Enum.AnimationPriority.Action, false)
+--	vaultTrack = loadAnim(VAULT_ANIM_ID, Enum.AnimationPriority.Action4, false)
+--	leftWallRunTrack = loadAnim(LEFT_WALLRUN_ANIM_ID, Enum.AnimationPriority.Action4, true)
+--	rightWallRunTrack = loadAnim(RIGHT_WALLRUN_ANIM_ID, Enum.AnimationPriority.Action4, true)
+--	wallJumpTrack = loadAnim(WALLJUMP_ANIM_ID, Enum.AnimationPriority.Action, false)
+--
+--	humanoid.HealthChanged:Connect(function(health)
+--		if health <= 30 and (lastMoveState == "Walk" or lastMoveState == "Sprint" or lastMoveState == "Idle") then
+--			setMoveState("InjuredSprint")
+--		end
+--	end)
+--
+--	local fallStart = 0
+--	humanoid.StateChanged:Connect(function(_, newState)
+--		if newState == Enum.HumanoidStateType.Jumping then
+--			if tick() < jumpCooldown then
+--				humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+--				return
+--			end
+--
+--			isAirborne = true
+--			fallStart = tick()
+--			stopAll()
+--
+--			local wallData = getWallNormal()
+--			if wallData then
+--				isWallRunning = true
+--				wallNormal = wallData.normal
+--				wallRunEndTime = tick() + WALLRUN_MAX_TIME
+--				if humanoid then humanoid.JumpPower = 0 end
+--				if rootPart then
+--					local projectedLook = rootPart.CFrame.LookVector - rootPart.CFrame.LookVector:Dot(wallNormal) * wallNormal
+--					local alongWall = projectedLook.Unit * WALLRUN_SPEED
+--					rootPart.AssemblyLinearVelocity = alongWall + Vector3.new(0, 12, 0)
+--				end
+--				stamina = math.max(0, stamina - WALLRUN_INITIAL_COST)
+--				setMoveState(wallData.side == "Left" and "LeftWallRun" or "RightWallRun")
+--			elseif canVault() then
+--				if vaultTrack then vaultTrack:Play(0.15) end
+--				if rootPart then
+--					local forward = rootPart.CFrame.LookVector
+--					rootPart.AssemblyLinearVelocity += forward * VAULT_FORWARD_BOOST + Vector3.new(0, VAULT_UP_BOOST, 0)
+--				end
+--				stamina = math.max(0, stamina - VAULT_STAMINA_COST)
+--				isVaulting = true
+--			else
+--				if jumpTrack then jumpTrack:Play(0.15) end
+--				if isSliding and rootPart then
+--					local forwardBoost = rootPart.CFrame.LookVector * 22
+--					rootPart.AssemblyLinearVelocity += forwardBoost
+--				end
+--			end
+--
+--			stamina = math.max(0, stamina - JUMP_DRAIN)
+--			if stamina <= 0 and not isExhausted then
+--				isExhausted = true
+--				exhaustionEndTime = tick() + EXHAUSTION_DURATION
+--				tweenSpeed(EXHAUSTED_SPEED, 0.4)
+--			end
+--			jumpCooldown = tick() + JUMP_COOLDOWN_TIME
+--
+--		elseif newState == Enum.HumanoidStateType.Freefall then
+--			if not isVaulting and tick() - fallStart > 0.35 then
+--				if jumpTrack then jumpTrack:Stop(0.2) end
+--				if fallTrack then fallTrack:Play(0.2) end
+--				if vaultTrack then vaultTrack:Stop(0.2) end
+--			end
+--		elseif newState == Enum.HumanoidStateType.Landed then
+--			isAirborne = false
+--			isVaulting = false
+--			if isWallRunning then
+--				isWallRunning = false
+--				if humanoid then humanoid.JumpPower = DEFAULT_JUMP_POWER end
+--			end
+--			stopAll()
+--			lastMoveState = "Idle"
+--		end
+--	end)
+--
+--	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+--		if gameProcessed then return end
+--		if input.KeyCode == Enum.KeyCode.Space and isWallRunning then
+--			performWallJump()
+--		elseif input.KeyCode == SLIDE_KEY then
+--			lastSlidePressTime = tick()
+--		end
+--	end)
+--end
+--
+--player.CharacterAdded:Connect(loadCharacter)
+--if player.Character then loadCharacter(player.Character) end
+--
+
+--RunService.RenderStepped:Connect(function(dt)
+--	if not humanoid or not ((isSprinting or isSliding) and not isAirborne and humanoid.MoveDirection.Magnitude > 0.1) then return end
+--	bobTime += dt * BOB_SPEED
+--	local bobY = math.sin(bobTime) * BOB_AMOUNT
+--	camera.CFrame = camera.CFrame * CFrame.new(0, bobY, 0)
+--end)
+--
+
+--RunService.Heartbeat:Connect(function(dt)
+--	if not humanoid or not rootPart then return end
+--
+--	local moving = humanoid.MoveDirection.Magnitude > 0.1
+--	local sprintKey = UserInputService:IsKeyDown(Enum.KeyCode.V)
+--	local slideKey = UserInputService:IsKeyDown(SLIDE_KEY)
+--	local forwardDot = rootPart.CFrame.LookVector:Dot(humanoid.MoveDirection)
+--	local canSprint = stamina > 0 and not isExhausted
+--	local canSlideBurst = stamina >= SLIDE_ACTIVATION_COST and not isExhausted and moving and not isAirborne and forwardDot > SLIDE_MIN_FORWARD_DOT and not isSlideOnCooldown
+--	local freshSlidePress = (tick() - lastSlidePressTime) < SLIDE_PRESS_WINDOW
+--	local currentTime = tick()
+--
+--	-- Update cooldown status
+--	if isSlideOnCooldown and currentTime >= slideCooldownEndTime then
+--		isSlideOnCooldown = false
+--	end
+--
+--	-- Slide end condition
+--	if isSliding and (not slideKey or forwardDot <= 0.1) then
+--		isSliding = false
+--		humanoid.HipHeight = DEFAULT_HIP_HEIGHT
+--		lastSprintTime = currentTime
+--		tweenSpeed(WALK_SPEED, 0.15)
+--		tweenFOV(WALK_FOV)
+--
+--		isSlideOnCooldown = true
+--		slideCooldownEndTime = currentTime + SLIDE_COOLDOWN
+--	end
+--
+--	if not isAirborne then
+--		-- Trigger slide burst
+--		if slideKey and canSlideBurst and not isSliding and freshSlidePress then
+--			isSliding = true
+--			isSprinting = false
+--			tweenSpeed(SLIDE_COAST_SPEED, 0.12)
+--			tweenFOV(SLIDE_FOV)
+--			humanoid.HipHeight = DEFAULT_HIP_HEIGHT * SLIDE_HIPHEIGHT_MULTIPLIER
+--			lastSprintTime = currentTime
+--			slideStartPos = rootPart.Position
+--			stamina = math.max(0, stamina - SLIDE_ACTIVATION_COST)
+--
+--			rootPart.AssemblyLinearVelocity += rootPart.CFrame.LookVector * SLIDE_JOLT_BOOST
+--
+--			setMoveState("Slide")
+--
+--		elseif isSliding then
+--			local currentVel = rootPart.AssemblyLinearVelocity
+--			local forwardDir = rootPart.CFrame.LookVector
+--			local distanceTraveled = (rootPart.Position - slideStartPos).Magnitude
+--			local lockStrength = math.clamp(0.85 - (distanceTraveled / MAX_SLIDE_DISTANCE) * 0.45, 0.4, 0.85)
+--
+--			local lockedVel = forwardDir * currentVel.Magnitude
+--			rootPart.AssemblyLinearVelocity = currentVel:Lerp(lockedVel, lockStrength)
+--
+--			if distanceTraveled > MAX_SLIDE_DISTANCE then
+--				isSliding = false
+--				humanoid.HipHeight = DEFAULT_HIP_HEIGHT
+--				lastSprintTime = currentTime
+--				tweenSpeed(WALK_SPEED, 0.15)
+--				tweenFOV(WALK_FOV)
+--
+--				isSlideOnCooldown = true
+--				slideCooldownEndTime = currentTime + SLIDE_COOLDOWN
+--			end
+--
+--			setMoveState("Slide")
+--
+--		elseif sprintKey and moving and canSprint then
+--			if not isSprinting then
+--				isSprinting = true
+--				tweenSpeed(SPRINT_SPEED, 0.2)
+--				tweenFOV(SPRINT_FOV)
+--				lastSprintTime = currentTime
+--			end
+--
+--			stamina = math.max(0, stamina - DRAIN_RATE * dt)
+--
+--			if humanoid.Health <= 30 then
+--				setMoveState("InjuredSprint")
+--			else
+--				setMoveState("Sprint")
+--			end
+--
+--			if stamina <= 0 and not isExhausted then
+--				isExhausted = true
+--				exhaustionEndTime = currentTime + EXHAUSTION_DURATION
+--				tweenSpeed(EXHAUSTED_SPEED, 0.4)
+--			end
+--
+--		else
+--			if isSprinting then
+--				isSprinting = false
+--				tweenSpeed(WALK_SPEED, 0.2)
+--				tweenFOV(WALK_FOV)
+--				lastSprintTime = currentTime
+--			end
+--
+--			if isExhausted and currentTime >= exhaustionEndTime then
+--				isExhausted = false
+--				tweenSpeed(WALK_SPEED, 0.4)
+--			end
+--
+--			if not isExhausted and currentTime - lastSprintTime > STAMINA_REGEN_DELAY then
+--				stamina = math.min(STAMINA_MAX, stamina + REGEN_RATE * dt)
+--			end
+--
+--			if moving then
+--				setMoveState(humanoid.Health <= 30 and "InjuredWalk" or "Walk")
+--			else
+--				setMoveState("Idle")
+--			end
+--		end
+--	end
+--
+--	-- === MID-AIR WALL RUN ACTIVATION ===
+--	if not isWallRunning then
+--		local wallData = getWallNormal()
+--		if wallData and (isAirborne or humanoid:GetState() == Enum.HumanoidStateType.Freefall) then
+--			-- Allow wallrun to start mid-air if close to wall and moving toward it
+--			local moveDir = humanoid.MoveDirection
+--			if moveDir.Magnitude > 0.1 and wallData.normal:Dot(moveDir) < -0.3 then  -- Moving toward the wall
+--				isWallRunning = true
+--				wallNormal = wallData.normal
+--				wallRunEndTime = currentTime + WALLRUN_MAX_TIME
+--				if humanoid then humanoid.JumpPower = 0 end
+--
+--				if rootPart then
+--					local projectedLook = rootPart.CFrame.LookVector - rootPart.CFrame.LookVector:Dot(wallNormal) * wallNormal
+--					local alongWall = projectedLook.Unit * WALLRUN_SPEED
+--					rootPart.AssemblyLinearVelocity = alongWall + Vector3.new(0, 8, 0)  -- Gentler upward on mid-air start
+--				end
+--
+--				stamina = math.max(0, stamina - WALLRUN_INITIAL_COST)
+--				setMoveState(wallData.side == "Left" and "LeftWallRun" or "RightWallRun")
+--			end
+--		end
+--	end
+--
+--	-- Wall run maintenance
+--	if isWallRunning then
+--		local wallData = getWallNormal()
+--
+--		if currentTime > wallRunEndTime or stamina <= 0 or not wallData then
+--			isWallRunning = false
+--			wallNormal = Vector3.new()
+--			if humanoid then humanoid.JumpPower = DEFAULT_JUMP_POWER end
+--			stopAll()
+--			lastSprintTime = currentTime
+--		else
+--			if rootPart then
+--				local currentVel = rootPart.AssemblyLinearVelocity
+--				local projected = currentVel - currentVel:Dot(wallNormal) * wallNormal
+--				local forwardAlongWall = (rootPart.CFrame.LookVector - rootPart.CFrame.LookVector:Dot(wallNormal) * wallNormal).Unit * WALLRUN_SPEED
+--				rootPart.AssemblyLinearVelocity = projected:Lerp(forwardAlongWall, 0.5) + Vector3.new(0, 3, 0)
+--			end
+--
+--			stamina = math.max(0, stamina - DRAIN_RATE * WALLRUN_DRAIN_MULTIPLIER * dt)
+--
+--			if wallData.side == "Left" then
+--				setMoveState("LeftWallRun")
+--			else
+--				setMoveState("RightWallRun")
+--			end
+--
+--			if stamina <= 0 and not isExhausted then
+--				isExhausted = true
+--				exhaustionEndTime = currentTime + EXHAUSTION_DURATION
+--				tweenSpeed(EXHAUSTED_SPEED, 0.4)
+--			end
+--		end
+--	end
+--
+--	-- GUI Update
+--	displayedStamina = displayedStamina + (stamina - displayedStamina) * (18 * dt)
+--	local percent = math.clamp(displayedStamina / STAMINA_MAX, 0, 1)
+--	staminaBar.Size = UDim2.new(percent, 0, 1, 0)
+--
+--	local isLowStamina = isExhausted or percent <= 0.2
+--	local inCooldown = isSlideOnCooldown
+--
+--	if inCooldown then
+--		staminaBar.BackgroundColor3 = Color3.fromRGB(255, 140, 50)
+--	elseif isLowStamina then
+--		staminaBar.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+--	elseif percent <= 0.5 then
+--		staminaBar.BackgroundColor3 = Color3.fromRGB(255, 190, 50)
+--	else
+--		staminaBar.BackgroundColor3 = Color3.fromRGB(80, 255, 120)
+--	end
+--
+--	staminaText.Text = math.floor(displayedStamina + 0.5) .. "/" .. STAMINA_MAX
+--	staminaText.TextColor3 = isLowStamina and Color3.fromRGB(255, 90, 90) or Color3.fromRGB(255, 255, 255)
+--
+--	-- Cooldown Label (smaller text above)
+--	if inCooldown then
+--		local remaining = math.max(0, math.ceil(slideCooldownEndTime - currentTime))
+--		cooldownLabel.Text = "SLIDE COOLDOWN (" .. remaining .. "s)"
+--		cooldownLabel.TextTransparency = 0
+--	else
+--		cooldownLabel.TextTransparency = 1
+--	end
+--end)
+--
+--print("SprintSystem v3.9.2 Loaded")
+
