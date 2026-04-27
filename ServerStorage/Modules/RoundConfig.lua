@@ -51,4 +51,10 @@ RoundConfig.MALICE = {
 	KILLER_STUN = 2.0
 }
 
+-- Currency
+RoundConfig.CURRENCY = {
+	START_POINTS = 500,
+	DAILY_BONUS = 100
+}
+
 return RoundConfig

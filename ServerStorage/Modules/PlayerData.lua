@@ -5,6 +5,7 @@ local playersData = {} -- In-game storage (replace with DataStoreService for pro
 -- Initialize player data
 function PlayerData:InitializePlayer(player)
 	if not playersData[player.UserId] then
+		local RoundConfig = require(game:GetService("ServerStorage"):WaitForChild("Modules"):WaitForChild("RoundConfig"))
 		playersData[player.UserId] = {
 			userId = player.UserId,
 			username = player.Name,
@@ -15,7 +16,12 @@ function PlayerData:InitializePlayer(player)
 			selectedKillerSkin = "Default",
 			level = 1,
 			exp = 0,
-			playerPoints = 0,
+			playerPoints = RoundConfig.CURRENCY.START_POINTS,
+			ownedCharacters = { Specter = true, Scout = true }, -- Free characters unlocked
+			ownedSkins = {
+				Specter = { Default = true },
+				Scout = { Default = true }
+			},
 			stats = {
 				survivorWins = 0,
 				killerWins = 0,
@@ -94,10 +100,88 @@ function PlayerData:GetHighestMalicePlayer(players)
 	return highestPlayer, highestMalice
 end
 
--- Reset Malice (optional - called after each round or manually)
-function PlayerData:ResetMalice(player)
+-- Buy a character
+function PlayerData:BuyCharacter(player, characterId)
 	local data = self:GetPlayerData(player)
-	data.malice = 0
+	local CharacterData = require(game:GetService("ServerStorage"):WaitForChild("Modules"):WaitForChild("CharacterData"))
+	
+	-- Check if already owned
+	if data.ownedCharacters[characterId] then
+		return false, "Already owned"
+	end
+	
+	-- Get character price
+	local character = CharacterData.KILLERS[characterId] or CharacterData.SURVIVORS[characterId]
+	if not character then
+		return false, "Character not found"
+	end
+	
+	-- Check funds
+	if data.playerPoints < character.price then
+		return false, "Insufficient funds"
+	end
+	
+	-- Purchase
+	data.playerPoints = data.playerPoints - character.price
+	data.ownedCharacters[characterId] = true
+	if not data.ownedSkins[characterId] then
+		data.ownedSkins[characterId] = {}
+	end
+	data.ownedSkins[characterId].Default = true
+	
+	print(player.Name .. " purchased " .. character.displayName)
+	return true, "Purchase successful"
+end
+
+-- Buy a skin
+function PlayerData:BuySkin(player, characterId, skinId)
+	local data = self:GetPlayerData(player)
+	local CharacterData = require(game:GetService("ServerStorage"):WaitForChild("Modules"):WaitForChild("CharacterData"))
+	
+	-- Check if character owned
+	if not data.ownedCharacters[characterId] then
+		return false, "Character not owned"
+	end
+	
+	-- Check if skin already owned
+	if data.ownedSkins[characterId] and data.ownedSkins[characterId][skinId] then
+		return false, "Skin already owned"
+	end
+	
+	-- Get skin price
+	local character = CharacterData.KILLERS[characterId] or CharacterData.SURVIVORS[characterId]
+	if not character or not character.skins[skinId] then
+		return false, "Skin not found"
+	end
+	
+	local skinPrice = character.skins[skinId].price
+	
+	-- Check funds
+	if data.playerPoints < skinPrice then
+		return false, "Insufficient funds"
+	end
+	
+	-- Purchase
+	data.playerPoints = data.playerPoints - skinPrice
+	if not data.ownedSkins[characterId] then
+		data.ownedSkins[characterId] = {}
+	end
+	data.ownedSkins[characterId][skinId] = true
+	
+	print(player.Name .. " purchased skin " .. skinId .. " for " .. character.displayName)
+	return true, "Purchase successful"
+end
+
+-- Check if player owns character
+function PlayerData:OwnsCharacter(player, characterId)
+	local data = self:GetPlayerData(player)
+	return data.ownedCharacters[characterId] or false
+end
+
+-- Check if player owns skin
+function PlayerData:OwnsSkin(player, characterId, skinId)
+	local data = self:GetPlayerData(player)
+	return data.ownedSkins[characterId] and data.ownedSkins[characterId][skinId] or false
 end
 
 return PlayerData

@@ -20,6 +20,12 @@ local gameState = {
 Players.PlayerAdded:Connect(function(player)
 	PlayerData:InitializePlayer(player)
 	print(player.Name .. " joined the game")
+	
+	-- Send initial UI state
+	wait(1) -- Wait for UI to load
+	Shared.Events.ShowBuyUI:FireClient(player)
+	local playerData = PlayerData:GetPlayerData(player)
+	Shared.Events.PlayerPointsUpdated:FireClient(player, playerData.playerPoints)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
@@ -29,6 +35,47 @@ Players.PlayerRemoving:Connect(function(player)
 	end
 end)
 
+-- Setup remote functions
+Shared.Functions.GetPlayerData.OnServerInvoke = function(player)
+	local data = PlayerData:GetPlayerData(player)
+	return {
+		playerPoints = data.playerPoints,
+		ownedCharacters = data.ownedCharacters,
+		ownedSkins = data.ownedSkins,
+		selectedKiller = data.selectedKiller,
+		selectedKillerSkin = data.selectedKillerSkin,
+		selectedSurvivor = data.selectedSurvivor,
+		selectedSurvivorSkin = data.selectedSurvivorSkin
+	}
+end
+
+Shared.Functions.BuyCharacter.OnServerInvoke = function(player, characterId)
+	local success, message = PlayerData:BuyCharacter(player, characterId)
+	if success then
+		local data = PlayerData:GetPlayerData(player)
+		Shared.Events.PlayerPointsUpdated:FireClient(player, data.playerPoints)
+	end
+	return success, message
+end
+
+Shared.Functions.BuySkin.OnServerInvoke = function(player, characterId, skinId)
+	local success, message = PlayerData:BuySkin(player, characterId, skinId)
+	if success then
+		local data = PlayerData:GetPlayerData(player)
+		Shared.Events.PlayerPointsUpdated:FireClient(player, data.playerPoints)
+	end
+	return success, message
+end
+
+Shared.Functions.SetSelectedCharacter.OnServerInvoke = function(player, characterType, characterId, skinId)
+	if characterType == "Killer" then
+		PlayerData:SetSelectedKiller(player, characterId, skinId)
+	else
+		PlayerData:SetSelectedSurvivor(player, characterId, skinId)
+	end
+	return true
+end
+
 -- Main game loop
 local function gameLoop()
 	while true do
@@ -36,7 +83,14 @@ local function gameLoop()
 		
 		-- INTERMISSION PHASE
 		if gameState.phase == RoundConfig.PHASES.INTERMISSION then
-			print("📍 INTERMISSION PHASE")
+			print("INTERMISSION PHASE")
+			Shared.Events.PhaseChanged:FireAllClients("Intermission")
+			
+			-- Show buy UI for all players
+			for _, player in pairs(players) do
+				Shared.Events.ShowBuyUI:FireClient(player)
+			end
+			
 			gameState.timer = RoundConfig.INTERMISSION_LENGTH
 			
 			while gameState.timer > 0 and gameState.phase == RoundConfig.PHASES.INTERMISSION do
@@ -59,6 +113,12 @@ local function gameLoop()
 		-- PREPARING PHASE
 		if gameState.phase == RoundConfig.PHASES.PREPARING then
 			print("🎯 PREPARING PHASE")
+			Shared.Events.PhaseChanged:FireAllClients("Preparing")
+			
+			-- Hide buy UI for all players
+			for _, player in pairs(players) do
+				Shared.Events.HideBuyUI:FireClient(player)
+			end
 			
 			-- Select Killer based on Malice
 			local killer, malice = PlayerData:GetHighestMalicePlayer(players)
@@ -97,6 +157,9 @@ local function gameLoop()
 		-- PLAYING PHASE
 		if gameState.phase == RoundConfig.PHASES.PLAYING then
 			print("⚔️ PLAYING PHASE")
+			Shared.Events.PhaseChanged:FireAllClients("Playing")
+			Shared.Events.RoundStarted:FireAllClients(gameState.currentMap.Name)
+			
 			gameState.timer = RoundConfig.ROUND_LENGTH
 			
 			while gameState.timer > 0 and gameState.phase == RoundConfig.PHASES.PLAYING do
@@ -113,7 +176,7 @@ local function gameLoop()
 				
 				-- All survivors dead = Killer wins
 				if aliveCount == 0 then
-					print(" Killer won")
+					print("🎉 Killer WINS!")
 					gameState.phase = RoundConfig.PHASES.ENDING
 					break
 				end
@@ -131,6 +194,7 @@ local function gameLoop()
 		-- ENDING PHASE
 		if gameState.phase == RoundConfig.PHASES.ENDING then
 			print("🏁 ENDING PHASE")
+			Shared.Events.PhaseChanged:FireAllClients("Ending")
 			Shared.Events.RoundEnded:FireAllClients()
 			
 			-- Distribute rewards

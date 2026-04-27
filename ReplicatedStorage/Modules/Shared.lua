@@ -14,6 +14,17 @@ local function getOrCreateRemoteEvent(name)
 	return remote
 end
 
+-- Create or get RemoteFunctions
+local function getOrCreateRemoteFunction(name)
+	local remote = ReplicatedStorage:FindFirstChild(name)
+	if not remote then
+		remote = Instance.new("RemoteFunction")
+		remote.Name = name
+		remote.Parent = ReplicatedStorage
+	end
+	return remote
+end
+
 -- Game Events
 Shared.Events = {
 	RoundStarted = getOrCreateRemoteEvent("RoundStarted"),
@@ -22,7 +33,19 @@ Shared.Events = {
 	TimerUpdate = getOrCreateRemoteEvent("TimerUpdate"),
 	PlayerKilled = getOrCreateRemoteEvent("PlayerKilled"),
 	MaliceUpdated = getOrCreateRemoteEvent("MaliceUpdated"),
-	CharacterSelected = getOrCreateRemoteEvent("CharacterSelected")
+	CharacterSelected = getOrCreateRemoteEvent("CharacterSelected"),
+	PhaseChanged = getOrCreateRemoteEvent("PhaseChanged"),
+	HideBuyUI = getOrCreateRemoteEvent("HideBuyUI"),
+	ShowBuyUI = getOrCreateRemoteEvent("ShowBuyUI"),
+	PlayerPointsUpdated = getOrCreateRemoteEvent("PlayerPointsUpdated")
+}
+
+-- Remote Functions
+Shared.Functions = {
+	GetPlayerData = getOrCreateRemoteFunction("GetPlayerData"),
+	BuyCharacter = getOrCreateRemoteFunction("BuyCharacter"),
+	BuySkin = getOrCreateRemoteFunction("BuySkin"),
+	SetSelectedCharacter = getOrCreateRemoteFunction("SetSelectedCharacter")
 }
 
 -- Utility function: Get all players

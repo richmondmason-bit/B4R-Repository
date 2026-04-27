@@ -1,18 +1,19 @@
 -- CharacterData.lua - Character definitions with stats, abilities, skins
 local CharacterData = {}
 
-
+-- ============ KILLERS ============
 CharacterData.KILLERS = {}
 
 CharacterData.KILLERS.Specter = {
-	id = "",
-	displayName = "",
-	description = "",
+	id = "specter",
+	displayName = "Specter",
+	description = "A ghostly entity with phasing abilities",
 	role = "Killer",
+	price = 0, -- 0 = free/default
 	health = 150,
 	speed = 18,
 	stamina = 150,
-	passives = { "" },
+	passives = { "Ethereal Presence - Survivors within 20 studs hear haunting whispers" },
 	abilities = {
 		{
 			name = "Phase Shift",
@@ -28,38 +29,39 @@ CharacterData.KILLERS.Specter = {
 		}
 	},
 	skins = {
-		Default = { color = Color3.fromRGB(100, 100, 150) },
-		Corrupted = { color = Color3.fromRGB(150, 50, 50) },
-		Ethereal = { color = Color3.fromRGB(200, 200, 255) }
+		Default = { name = "Default", price = 0, color = Color3.fromRGB(100, 100, 150) },
+		Corrupted = { name = "Corrupted", price = 250, color = Color3.fromRGB(150, 50, 50) },
+		Ethereal = { name = "Ethereal", price = 500, color = Color3.fromRGB(200, 200, 255) }
 	}
 }
 
 CharacterData.KILLERS.Phantom = {
-	id = "",
-	displayName = "",
-	description = "",
+	id = "phantom",
+	displayName = "Phantom",
+	description = "Swift and deadly, a master of ambush",
 	role = "Killer",
+	price = 300,
 	health = 140,
 	speed = 20,
 	stamina = 130,
-	passives = { "" },
+	passives = { "Swift Reflexes - 10% faster attack speed" },
 	abilities = {
 		{
-			name = "",
-			description = "",
+			name = "Shadow Strike",
+			description = "Dash forward and strike",
 			cooldown = 15,
 			distance = 40
 		},
 		{
-			name = "",
-			description = "",
+			name = "Decoy",
+			description = "Create a fake trail",
 			cooldown = 25
 		}
 	},
 	skins = {
-		Default = { color = Color3.fromRGB(20, 20, 20) },
-		Crimson = { color = Color3.fromRGB(139, 0, 0) },
-		Void = { color = Color3.fromRGB(10, 10, 30) }
+		Default = { name = "Default", price = 0, color = Color3.fromRGB(20, 20, 20) },
+		Crimson = { name = "Crimson", price = 250, color = Color3.fromRGB(139, 0, 0) },
+		Void = { name = "Void", price = 500, color = Color3.fromRGB(10, 10, 30) }
 	}
 }
 
@@ -68,6 +70,7 @@ CharacterData.KILLERS.Wraith = {
 	displayName = "Wraith",
 	description = "A cursed entity that hunts the living",
 	role = "Killer",
+	price = 300,
 	health = 160,
 	speed = 17,
 	stamina = 160,
@@ -87,12 +90,13 @@ CharacterData.KILLERS.Wraith = {
 		}
 	},
 	skins = {
-		Default = { color = Color3.fromRGB(80, 80, 100) },
-		Ancient = { color = Color3.fromRGB(60, 40, 20) },
-		Radiant = { color = Color3.fromRGB(255, 200, 0) }
+		Default = { name = "Default", price = 0, color = Color3.fromRGB(80, 80, 100) },
+		Ancient = { name = "Ancient", price = 250, color = Color3.fromRGB(60, 40, 20) },
+		Radiant = { name = "Radiant", price = 500, color = Color3.fromRGB(255, 200, 0) }
 	}
 }
 
+-- ============ SURVIVORS ============
 CharacterData.SURVIVORS = {}
 
 CharacterData.SURVIVORS.Scout = {
@@ -100,6 +104,7 @@ CharacterData.SURVIVORS.Scout = {
 	displayName = "Scout",
 	description = "Quick and agile, excellent at evading",
 	role = "Survivor",
+	price = 0, -- free/default
 	health = 100,
 	speed = 16.5,
 	stamina = 120,
@@ -119,9 +124,9 @@ CharacterData.SURVIVORS.Scout = {
 		}
 	},
 	skins = {
-		Default = { color = Color3.fromRGB(100, 150, 100) },
-		Urban = { color = Color3.fromRGB(50, 50, 50) },
-		Forest = { color = Color3.fromRGB(34, 139, 34) }
+		Default = { name = "Default", price = 0, color = Color3.fromRGB(100, 150, 100) },
+		Urban = { name = "Urban", price = 200, color = Color3.fromRGB(50, 50, 50) },
+		Forest = { name = "Forest", price = 400, color = Color3.fromRGB(34, 139, 34) }
 	}
 }
 
@@ -130,6 +135,7 @@ CharacterData.SURVIVORS.Medic = {
 	displayName = "Medic",
 	description = "Support-focused, heals allies",
 	role = "Survivor",
+	price = 300,
 	health = 100,
 	speed = 15.5,
 	stamina = 100,
@@ -150,67 +156,69 @@ CharacterData.SURVIVORS.Medic = {
 		}
 	},
 	skins = {
-		Default = { color = Color3.fromRGB(200, 100, 100) },
-		Classic = { color = Color3.fromRGB(255, 255, 255) },
-		Emergency = { color = Color3.fromRGB(255, 69, 0) }
+		Default = { name = "Default", price = 0, color = Color3.fromRGB(200, 100, 100) },
+		Classic = { name = "Classic", price = 200, color = Color3.fromRGB(255, 255, 255) },
+		Emergency = { name = "Emergency", price = 400, color = Color3.fromRGB(255, 69, 0) }
 	}
 }
 
 CharacterData.SURVIVORS.Slayer = {
-	id = "slasher",
-	displayName = "Slasher",
-	description = "",
+	id = "slayer",
+	displayName = "Slayer",
+	description = "Aggressive fighter, can stun killers",
 	role = "Survivor",
+	price = 300,
 	health = 110,
 	speed = 16,
 	stamina = 110,
-	passives = { "" },
+	passives = { "Fighter's Spirit - Bonus damage on counterattacks" },
 	abilities = {
 		{
-			name = "",
-			description = "",
+			name = "Stun Strike",
+			description = "Stun the killer for 2 seconds",
 			cooldown = 25,
 			stunDuration = 2
 		},
 		{
-			name = "",
-			description = "",
+			name = "Counterattack",
+			description = "Dodge and strike back",
 			cooldown = 20
 		}
 	},
 	skins = {
-		Default = { color = Color3.fromRGB(200, 100, 50) },
-		Armored = { color = Color3.fromRGB(150, 150, 150) },
-		Battle = { color = Color3.fromRGB(139, 69, 19) }
+		Default = { name = "Default", price = 0, color = Color3.fromRGB(200, 100, 50) },
+		Armored = { name = "Armored", price = 250, color = Color3.fromRGB(150, 150, 150) },
+		Battle = { name = "Battle", price = 500, color = Color3.fromRGB(139, 69, 19) }
 	}
 }
 
 CharacterData.SURVIVORS.Hacker = {
-	id = "",
-	displayName = "",
-	description = "",
+	id = "hacker",
+	displayName = "Hacker",
+	description = "Tech-savvy, can disable killer abilities",
 	role = "Survivor",
+	price = 300,
 	health = 95,
 	speed = 16,
 	stamina = 105,
-	passives = { "" },
+	passives = { "Tech Genius - Repair generators 20% faster" },
 	abilities = {
 		{
 			name = "EMP Pulse",
-			description = "",
+			description = "Disable killer abilities for 8 seconds",
 			cooldown = 40,
 			duration = 8
 		},
 		{
 			name = "Hack Terminal",
-			description = "",
+			description = "Access secret passages",
 			cooldown = 30
 		}
 	},
 	skins = {
-		Default = { color = Color3.fromRGB(100, 150, 200) },
-		Neon = { color = Color3.fromRGB(0, 255, 255) },
-		Matrix = { color = Color3.fromRGB(0, 255, 0) }
+		Default = { name = "Default", price = 0, color = Color3.fromRGB(100, 150, 200) },
+		Neon = { name = "Neon", price = 250, color = Color3.fromRGB(0, 255, 255) },
+		Matrix = { name = "Matrix", price = 500, color = Color3.fromRGB(0, 255, 0) }
 	}
 }
 
