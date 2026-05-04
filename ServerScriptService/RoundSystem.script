@@ -442,7 +442,7 @@ while true do
 	-- PLAYER CHECK
 	local playerList = Players:GetPlayers()
 	if #playerList < 2 then
-		warn("⚠️ Need at least 2 players to start")
+		warn("Need at least 2 players to start")
 		task.wait(5)
 		continue
 	end
