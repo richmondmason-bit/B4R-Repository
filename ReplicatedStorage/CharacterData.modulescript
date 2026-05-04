@@ -1,0 +1,47 @@
+-- ============================================================
+--  CharacterData (ModuleScript → ReplicatedStorage)
+-- ============================================================
+
+local CharacterData = {}
+
+CharacterData.Characters = {
+
+	-- ── CHARACTER 1: Shadow ──────────────────────────────────
+	{
+		id          = "shadow",
+		name        = "Shadow",
+		description = "A stealthy survivor who can blink short distances.",
+		cost        = 500,
+		currency    = "Coins",
+		stats = { speed = 18, health = 90 },
+		modelName   = "Shadow",
+		abilities = {
+			Q = { name = "Blink",         cooldown = 12, maliceType = "escape", description = "Teleport forward in your look direction." },
+			E = { name = "Smoke Screen",  cooldown = 20, maliceType = "slow",   description = "Drop a cloud that slows the killer." },
+		},
+	},
+
+	-- ── CHARACTER 2: Brute ───────────────────────────────────
+	{
+		id          = "brute",
+		name        = "Brute",
+		description = "A tough survivor who can stun the killer up close.",
+		cost        = 750,
+		currency    = "Coins",
+		stats = { speed = 14, health = 150 },
+		modelName   = "Brute",
+		abilities = {
+			Q = { name = "Shove",    cooldown = 15, maliceType = "hit", description = "Shove the killer backward and stun briefly." },
+			E = { name = "Fortify",  cooldown = 30, maliceType = nil,   description = "Become immune to the next hit." },
+		},
+	},
+
+	-- Add more characters here following the same structure
+}
+
+CharacterData.ById = {}
+for _, char in ipairs(CharacterData.Characters) do
+	CharacterData.ById[char.id] = char
+end
+
+return CharacterData

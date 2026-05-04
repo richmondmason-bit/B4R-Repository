@@ -1,0 +1,254 @@
+-- ============================================================
+--  AbilityHandler (Script → ServerScriptService)
+--  Handles ability activation, cooldowns, malice rewards, morphs
+-- ============================================================
+
+local Players       = game:GetService("Players")
+local Debris        = game:GetService("Debris")
+local RS            = game:GetService("ReplicatedStorage")
+local SS            = game:GetService("ServerScriptService")
+
+local DataManager   = require(SS:WaitForChild("DataManager"))
+local CharacterData = require(RS:WaitForChild("CharacterData"))
+local Globals       = require(SS:WaitForChild("RoundSystem_Globals"))
+
+local res = RS:WaitForChild("RemoteEvents")
+
+-- ====================== CONFIG ======================
+
+-- Lowered malice rates as requested — only abilities grant malice
+local MALICE_REWARDS = {
+	hit    = 2,
+	slow   = 1,
+	escape = 1,
+}
+
+-- ====================== REMOTES ======================
+
+local function getOrCreate(parent, name, class)
+	local e = parent:FindFirstChild(name)
+	if e then return e end
+	local re = Instance.new(class or "RemoteEvent")
+	re.Name = name
+	re.Parent = parent
+	return re
+end
+
+local UseAbility      = getOrCreate(res, "UseAbility")
+local AbilityResult   = getOrCreate(res, "AbilityResult")
+local AbilityCooldown = getOrCreate(res, "AbilityCooldown")
+local MorphPlayer_RE  = getOrCreate(res, "MorphPlayer")
+
+-- ====================== COOLDOWNS ======================
+
+local cooldowns = {}  -- [Player][key] = os.clock() of last use
+
+local function getCooldownRemaining(plr, key)
+	if not cooldowns[plr] then return 0 end
+	local lastUsed = cooldowns[plr][key]
+	if not lastUsed then return 0 end
+	local charId  = DataManager.GetSelectedCharacter(plr)
+	local charDef = CharacterData.ById[charId]
+	if not charDef or not charDef.abilities[key] then return 0 end
+	return math.max(0, charDef.abilities[key].cooldown - (os.clock() - lastUsed))
+end
+
+local function setCooldown(plr, key)
+	if not cooldowns[plr] then cooldowns[plr] = {} end
+	cooldowns[plr][key] = os.clock()
+end
+
+-- ====================== MORPH ======================
+
+local CharacterModels = game:GetService("ServerStorage"):FindFirstChild("CharacterModels")
+
+local function applyMorph(plr, charId)
+	local char    = plr.Character
+	if not char then return end
+	local charDef = CharacterData.ById[charId]
+	if not charDef then return end
+
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.MaxHealth = charDef.stats.health
+		hum.Health    = charDef.stats.health
+		hum.WalkSpeed = charDef.stats.speed
+	end
+
+	if CharacterModels then
+		local model = CharacterModels:FindFirstChild(charDef.modelName)
+		if model then
+			MorphPlayer_RE:FireClient(plr, charDef.modelName)
+		end
+	end
+end
+
+-- ====================== ABILITY EFFECTS ======================
+--[[
+	Add your ability logic here, keyed by [charId][key].
+	Return true on success, false on failure.
+	target = the Player passed from the client (optional, for targeted abilities).
+]]
+
+local AbilityEffects = {}
+
+-- ── Shadow Q: Blink ──────────────────────────────────────────
+AbilityEffects["shadow"] = {}
+AbilityEffects["shadow"]["Q"] = function(plr, target)
+	local char = plr.Character
+	if not char then return false end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return false end
+
+	local newPos = hrp.Position + (hrp.CFrame.LookVector * 20)
+	hrp.CFrame   = CFrame.new(newPos) * (hrp.CFrame - hrp.CFrame.Position)
+	return true
+end
+
+-- ── Shadow E: Smoke Screen ───────────────────────────────────
+AbilityEffects["shadow"]["E"] = function(plr, target)
+	local char = plr.Character
+	if not char then return false end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return false end
+
+	local smoke = Instance.new("Part")
+	smoke.Name         = "SmokeZone"
+	smoke.Size         = Vector3.new(12, 4, 12)
+	smoke.CFrame       = hrp.CFrame
+	smoke.Anchored     = true
+	smoke.CanCollide   = false
+	smoke.Transparency = 0.6
+	smoke.BrickColor   = BrickColor.new("Dark grey")
+	smoke.Parent       = workspace
+
+	task.spawn(function()
+		local elapsed = 0
+		local prevSpeed = nil
+
+		while elapsed < 5 do
+			task.wait(0.5)
+			elapsed += 0.5
+
+			local killer = Globals.GetKiller()
+			if killer and killer.Character then
+				local kHRP = killer.Character:FindFirstChild("HumanoidRootPart")
+				local hum  = killer.Character:FindFirstChildOfClass("Humanoid")
+				if kHRP and hum then
+					if (kHRP.Position - smoke.Position).Magnitude <= 7 then
+						if not prevSpeed then prevSpeed = hum.WalkSpeed end
+						hum.WalkSpeed = 8
+					elseif prevSpeed then
+						hum.WalkSpeed = prevSpeed
+						prevSpeed = nil
+					end
+				end
+			end
+		end
+
+		-- Restore killer speed
+		local killer = Globals.GetKiller()
+		if killer and killer.Character then
+			local hum = killer.Character:FindFirstChildOfClass("Humanoid")
+			if hum and prevSpeed then hum.WalkSpeed = prevSpeed end
+		end
+
+		smoke:Destroy()
+	end)
+
+	return true
+end
+
+-- ── Brute Q: Shove ───────────────────────────────────────────
+AbilityEffects["brute"] = {}
+AbilityEffects["brute"]["Q"] = function(plr, target)
+	if not target or not target.Character then return false end
+	local selfHRP   = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+	local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+	if not selfHRP or not targetHRP then return false end
+
+	if (targetHRP.Position - selfHRP.Position).Magnitude > 8 then return false end
+
+	local dir = (targetHRP.Position - selfHRP.Position).Unit
+	local bv  = Instance.new("BodyVelocity")
+	bv.Velocity  = dir * 40
+	bv.MaxForce  = Vector3.new(1e5, 1e5, 1e5)
+	bv.Parent    = targetHRP
+	Debris:AddItem(bv, 0.2)
+
+	local hum = target.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		local prev = hum.WalkSpeed
+		hum.WalkSpeed = 0
+		task.delay(1.5, function()
+			if hum and hum.Parent then hum.WalkSpeed = prev end
+		end)
+	end
+
+	return true
+end
+
+-- ── Brute E: Fortify ─────────────────────────────────────────
+AbilityEffects["brute"]["E"] = function(plr, target)
+	local char = plr.Character
+	if not char then return false end
+	local tag = Instance.new("BoolValue")
+	tag.Name   = "Fortified"
+	tag.Parent = char
+	Debris:AddItem(tag, 3)
+	return true
+end
+
+-- ====================== ABILITY REQUEST HANDLER ======================
+
+UseAbility.OnServerEvent:Connect(function(plr, key, targetPlr)
+	if type(key) ~= "string" then return end
+	key = key:upper()
+	if key ~= "Q" and key ~= "E" and key ~= "F" then return end
+
+	-- Must be an active round
+	if not Globals.IsRoundActive() then return end
+
+	local charId  = DataManager.GetSelectedCharacter(plr)
+	local charDef = CharacterData.ById[charId]
+	if not charDef then return end
+
+	local abilityDef = charDef.abilities[key]
+	if not abilityDef then return end
+
+	local remaining = getCooldownRemaining(plr, key)
+	if remaining > 0 then
+		AbilityResult:FireClient(plr, { success = false, reason = "On cooldown.", remaining = remaining })
+		return
+	end
+
+	local effectFn = AbilityEffects[charId] and AbilityEffects[charId][key]
+	local success  = effectFn and effectFn(plr, targetPlr) or true
+
+	if not success then
+		AbilityResult:FireClient(plr, { success = false, reason = "Ability failed." })
+		return
+	end
+
+	setCooldown(plr, key)
+	AbilityCooldown:FireClient(plr, key, abilityDef.cooldown)
+
+	if abilityDef.maliceType then
+		local reward = MALICE_REWARDS[abilityDef.maliceType] or 0
+		if reward > 0 then DataManager.AddMalice(plr, reward) end
+	end
+
+	AbilityResult:FireClient(plr, { success = true, ability = abilityDef.name })
+end)
+
+-- ====================== CLEANUP ======================
+
+Players.PlayerRemoving:Connect(function(plr)
+	cooldowns[plr] = nil
+end)
+
+-- ====================== PUBLIC API ======================
+
+return {
+	ApplyMorph = applyMorph,
+}
