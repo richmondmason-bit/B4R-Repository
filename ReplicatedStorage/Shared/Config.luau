@@ -1,0 +1,73 @@
+---- ReplicatedStorage.Shared.Config
+----this is a module script and it hasnt been modified with the new sprint system tht with go into movement controller
+--
+--local Config = {}
+--
+--
+---- ANIMATIONS 
+--
+--Config.Animations = {
+--    Idle = "rbxassetid://YOUR_IDLE_ANIMATION_ID",
+--    Walk = "rbxassetid://YOUR_WALK_ID",
+--    WalkRight = "rbxassetid://YOUR_WALK_RIGHT_ID",
+--    WalkLeft = "rbxassetid://YOUR_WALK_LEFT_ID",
+--    WalkBack = "rbxassetid://YOUR_WALK_BACK_ID",
+--    
+--    Run = "rbxassetid://YOUR_RUN_ID",
+--    RunRight = "rbxassetid://YOUR_RUN_RIGHT_ID",
+--    RunLeft = "rbxassetid://YOUR_RUN_LEFT_ID",
+--    RunBack = "rbxassetid://YOUR_RUN_BACK_ID",
+--    
+--    Jump = "rbxassetid://YOUR_JUMP_ID",
+--    Fall = "rbxassetid://YOUR_FALL_ID",
+--    Land = "rbxassetid://YOUR_LAND_ID",
+--    
+--    -- Transition animations
+--    WalkEnd = "rbxassetid://YOUR_WALK_END_ID",
+--    RunEnd = "rbxassetid://YOUR_RUN_END_ID",
+--    WalkToRun = "rbxassetid://YOUR_WALK_TO_RUN_ID",
+--    RunToWalk = "rbxassetid://YOUR_RUN_TO_WALK_ID",
+--    BackWalkEnd = "rbxassetid://YOUR_BACK_WALK_END_ID",
+--    LeftWalkEnd = "rbxassetid://YOUR_LEFT_WALK_END_ID",
+--    RightWalkEnd = "rbxassetid://YOUR_RIGHT_WALK_END_ID",
+--}
+--
+--
+---- ANIMATION BLENDING / TRANSITIONS
+--
+--Config.AnimationBlend = {
+--    DefaultFade = 0.2,
+--    JumpFade = 0.1,
+--    LandFade = 0.15,
+--    TransitionFade = 0.15,
+--}
+--
+---- CAMERA SETTINGS
+--
+--Config.Camera = {
+--    DefaultZoom = 12,
+--    MinZoom = 6,
+--    MaxZoom = 25,
+--    ZoomStep = 2,
+--    ZoomSmoothing = 12,
+--    
+--    DefaultOffset = Vector3.new(0, 3, 0),      -- (X, Y, Z) offset from root
+--    ShiftLockOffset = Vector3.new(2, 3, 0),    -- over-the-shoulder feel
+--    
+--    Sensitivity = 0.4,          -- mouse sensitivity
+--    MinPitch = -80,             -- degrees
+--    MaxPitch = 80,
+--    
+--    CollisionRadius = 1.5,      -- how much to pull camera away from walls
+--}
+--
+---- MOVEMENT SETTINGS
+--
+--Config.Movement = {
+--    BaseWalkSpeed = 16,
+--    BaseRunSpeed = 28,      -- multiplier-ish, code handles it
+--    BaseJumpPower = 50,
+--    TurnSpeed = 12,         -- how fast character rotates (higher = snappier)
+--}
+--
+--return Config
