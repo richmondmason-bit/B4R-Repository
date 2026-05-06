@@ -193,18 +193,16 @@ local function scanlines(parent)
     g.Parent = f
 end
 
--- ============================================================
 --  SCREEN GUI ROOT
--- ============================================================
+
 local gui = make("ScreenGui", {
     Name           = "HELLQUAKEGui",
     ResetOnSpawn   = false,
     ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 }, playerGui)
 
--- ============================================================
 --  TITLE SCREEN
--- ============================================================
+
 local titleScreen = make("Frame", {
     Size             = UDim2.fromScale(1,1),
     BackgroundColor3 = C.BG,
@@ -306,9 +304,9 @@ task.spawn(function()
     end
 end)
 
--- ============================================================
+
 --  LEVEL SELECT SCREEN
--- ============================================================
+
 levelScreen = make("Frame", {
     Size             = UDim2.fromScale(1,1),
     BackgroundColor3 = Color3.fromRGB(0,0,0),
