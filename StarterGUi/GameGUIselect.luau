@@ -83,26 +83,26 @@ local CONFIG = {
     -- ↓↓ REPLACE every placeId value with your actual Roblox Place IDs ↓↓
     ACTS = {
         {
-            label  = "PRELUDE",
-            sub    = "DESCENT BEGINS",
+            label  = "Start",
+            sub    = "Start of the acts",
             levels = {
-                { num = "0-1", name = "IGNITION",        rank = "B",    ch = {true,  false, false}, locked = false, placeId = 1234567890 },
-                { num = "0-2", name = "THE GRINDER",      rank = "A",    ch = {true,  true,  false}, locked = false, placeId = 1234567891 },
-                { num = "0-3", name = "IRON CATHEDRAL",   rank = "S",    ch = {true,  true,  true }, locked = false, placeId = 1234567892 },
-                { num = "0-S", name = "THE UNDERBELLY",   rank = "P",    ch = {true,  true,  true }, locked = false, placeId = 1234567893, secret = true },
-                { num = "0-4", name = "GATES OF ASH",     rank = "none", ch = {false, false, false}, locked = false, placeId = 1234567894 },
+                { num = "0-1", name = "Unknown 0-1",        rank = nil,    ch = {true,  false, false}, locked = false, placeId = 1234567890 },
+                { num = "0-2", name = "Unknown 0-2",      rank = nil,    ch = {true,  true,  false}, locked = false, placeId = 1234567891 },
+                { num = "0-3", name = "Unknown 0-3",   rank = nil,    ch = {true,  true,  true }, locked = false, placeId = 1234567892 },
+                { num = "0-S", name = "Unknown 0-4",   rank = nil,    ch = {true,  true,  true }, locked = false, placeId = 1234567893, secret = true },
+                { num = "0-4", name = "Unknown 0-5",     rank = nil, ch = {false, false, false}, locked = false, placeId = 1234567894 },
             },
         },
         {
-            label  = "ACT I",
-            sub    = "INFINITE HATRED",
+            label  = "1",
+            sub    = "First",
             levels = {
-                { num = "1-1", name = "SHATTERED FAITH",    rank = "S",    ch = {true,  true,  false}, locked = false, placeId = 1234567895 },
-                { num = "1-2", name = "BRIDGEFIRE",          rank = "A",    ch = {true,  false, false}, locked = false, placeId = 1234567896 },
-                { num = "P-1", name = "THE HOLLOW CIRCUIT",  rank = "none", ch = {false, false, false}, locked = false, placeId = 1234567897, secret = true },
-                { num = "1-3", name = "VOLTAGE",             rank = "B",    ch = {true,  true,  false}, locked = false, placeId = 1234567898 },
-                { num = "1-4", name = "PALE DOMINION",       rank = "none", ch = {false, false, false}, locked = false, placeId = 1234567899 },
-                { num = "1-E", name = "LAST MACHINE",        rank = "none", ch = {false, false, false}, locked = true,  placeId = 1234567900 },
+                { num = "1-1", name = "Unknown 1-1",    rank = nil,    ch = {true,  true,  false}, locked = false, placeId = 1234567895 },
+                { num = "1-2", name = "Unknown 1-2",          rank = nil,    ch = {true,  false, false}, locked = false, placeId = 1234567896 },
+                { num = "P-1", name = "unknown 1-3",  rank = nil, ch = {false, false, false}, locked = false, placeId = 1234567897, secret = true },
+                { num = "1-3", name = "Unknown 1-4",             rank = nil,    ch = {true,  true,  false}, locked = false, placeId = 1234567898 },
+                { num = "1-4", name = "Unknown 1-5",       rank = nil, ch = {false, false, false}, locked = false, placeId = 1234567899 },
+                { num = "1-E", name = "Unknown 1-6",        rank = nil, ch = {false, false, false}, locked = true,  placeId = 1234567900 },
             },
         },
         {
@@ -137,9 +137,8 @@ local RANK_COLORS = {
     none = C.RED_DIMMER,
 }
 
--- ============================================================
+
 --  UTILITY
--- ============================================================
 local function make(cls, props, parent)
     local obj = Instance.new(cls)
     for k, v in pairs(props) do obj[k] = v end
@@ -196,7 +195,7 @@ end
 --  SCREEN GUI ROOT
 
 local gui = make("ScreenGui", {
-    Name           = "HELLQUAKEGui",
+    Name           = "Gui",
     ResetOnSpawn   = false,
     ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 }, playerGui)
@@ -285,7 +284,7 @@ for i, item in ipairs(CONFIG.MENU_ITEMS) do
             rebuildLevelList()
             rebuildDetail()
         elseif item.action == "QUIT" then
-            player:Kick("Thanks for playing " .. CONFIG.GAME_NAME)
+            player:Kick("Thanks for joining " .. CONFIG.GAME_NAME)
         else
             CONFIG.OnMenuAction(item)
         end
@@ -304,8 +303,6 @@ task.spawn(function()
     end
 end)
 
-
---  LEVEL SELECT SCREEN
 
 levelScreen = make("Frame", {
     Size             = UDim2.fromScale(1,1),
@@ -550,7 +547,7 @@ local function rebuildLevelList()
             TextTruncate = Enum.TextTruncate.AtEnd,
         }, row)
 
-        for j, done in ipairs(lv.ch) do
+        for j, done in ipairs(lv.Ch) do
             make("Frame", {
                 Size = UDim2.new(0,8,0,8),
                 Position = UDim2.new(0.61,(j-1)*13,0.5,-4),
