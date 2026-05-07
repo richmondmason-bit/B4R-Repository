@@ -1,0 +1,8 @@
+--Create a Folder named RbxForgeShared in ReplicatedStorage. 
+--inside it create a Folder named Remotes. 
+--add the following RemoteEvents inside Remotes:
+--EnemySpawn
+--EnemyUpdate
+--EnemyDamaged
+--EnemyDestroyed
+--RequestAttack
