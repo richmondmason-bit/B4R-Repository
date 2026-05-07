@@ -15,9 +15,9 @@ local playerGui       = player:WaitForChild("PlayerGui")
 
 local CONFIG = {
 
-    GAME_NAME  = "HELLQUAKE",
-    SUBTITLE   = "THERE IS NO ESCAPE.",
-    VERSION    = "v0.1.0",
+    GAME_NAME  = "Battle For Robloxia",
+    SUBTITLE   = "Pluh",
+    VERSION    = "v0.1.1",
 
     MENU_ITEMS = {
         { label = "START GAME",  action = "LEVELS" },
